@@ -7,7 +7,7 @@ import (
 
 func main() {
   fmt.Printf("Hello World, from chip-8.\n")
-  fmt.Printf(Sqrt(3.), math.Sqrt(3))
+  fmt.Println(Sqrt(3.), math.Sqrt(3.))
 }
 
 func Power(base float64, power int) float64 {
