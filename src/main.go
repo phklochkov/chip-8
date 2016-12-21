@@ -1,15 +1,12 @@
 package main
 
 import (
-  "fmt"
-  "sortFactory"
-  "panda"
+	"rom"
+	"chip"
 )
 
-
-
 func main() {
-  mao := panda.New("Xiong")
-  fmt.Println(mao)
-  sortFactory.CreateSorter();
+	game := rom.Load("D:/bo/Go/projects/chip-8/roms/BRIX")
+
+	chip.Emulate(game)
 }
