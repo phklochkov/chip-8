@@ -12,9 +12,14 @@ func Emulate(game *rom.Rom) {
 		if err != nil {
 			break
 		}
+		
+		first4 := opcode[0] >> 4
+		second4 := opcode[0] & 15
 
-		switch opcode {
-		case 0x00E0:
+		fmt.Printf("%b %b %b ", first4, second4, opcode)
+
+		switch first4 {
+		case 0:
 			fmt.Println("Clear screen")
 		default:
 			fmt.Println("Coming soon")

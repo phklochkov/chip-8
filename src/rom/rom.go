@@ -16,12 +16,15 @@ func (rom *Rom) Size() int {
 	return len(rom.Data)
 }
 
-func (rom *Rom) NextOperation() (byte, error){
-	rom.OpPointer++
-	if rom.OpPointer > len((*rom).Data) - 2 {
-		return byte(0), errors.New("The ROM has ended, STAHP")
+func (rom *Rom) NextOperation() ([]byte, error){
+	rom.OpPointer += 2
+	if rom.OpPointer > len((*rom).Data) - 3 {
+		return nil, errors.New("The ROM has ended, STAHP")
 	}
-	return rom.Data[rom.OpPointer - 1], nil
+	
+	opcode := []byte { (*rom).Data[rom.OpPointer - 2], (*rom).Data[rom.OpPointer - 1] }
+	
+	return opcode, nil
 }
 
 func Load(path string) *Rom {
