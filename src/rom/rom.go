@@ -1,29 +1,29 @@
 package rom
 
 import (
-	"fmt"
-	"os"
-	"io/ioutil"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
 )
 
 type Rom struct {
-	Data []byte
-	OpPointer int
+	Data      []byte
+	OpPointer uint16
 }
 
 func (rom *Rom) Size() int {
 	return len(rom.Data)
 }
 
-func (rom *Rom) NextOperation() ([]byte, error){
+func (rom *Rom) NextOperation() ([]byte, error) {
 	rom.OpPointer += 2
-	if rom.OpPointer > len((*rom).Data) - 3 {
+	if int(rom.OpPointer) > len((*rom).Data)-3 {
 		return nil, errors.New("The ROM has ended, STAHP")
 	}
-	
-	opcode := []byte { (*rom).Data[rom.OpPointer - 2], (*rom).Data[rom.OpPointer - 1] }
-	
+
+	opcode := []byte{(*rom).Data[rom.OpPointer-2], (*rom).Data[rom.OpPointer-1]}
+
 	return opcode, nil
 }
 
@@ -45,5 +45,5 @@ func Load(path string) *Rom {
 }
 
 func (obj *Rom) String() string {
-	return string(obj.Data)
+	return string((*obj).Data)
 }
