@@ -1,7 +1,6 @@
 package rom
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,18 +15,7 @@ func (rom *Rom) Size() int {
 	return len(rom.Data)
 }
 
-func (rom *Rom) NextOperation() ([]byte, error) {
-	rom.OpPointer += 2
-	if int(rom.OpPointer) > len((*rom).Data)-3 {
-		return nil, errors.New("The ROM has ended, STAHP")
-	}
-
-	opcode := []byte{(*rom).Data[rom.OpPointer-2], (*rom).Data[rom.OpPointer-1]}
-
-	return opcode, nil
-}
-
-func Load(path string) *Rom {
+func Load(path string) Rom {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -41,7 +29,7 @@ func Load(path string) *Rom {
 		fmt.Println(err)
 	}
 
-	return &Rom{Data: data}
+	return Rom{Data: data}
 }
 
 func (obj *Rom) String() string {

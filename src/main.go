@@ -1,12 +1,13 @@
 package main
 
 import (
-	"rom"
 	"chip"
+	"rom"
 )
 
 func main() {
 	game := rom.Load("D:/bo/Go/projects/chip-8/roms/BRIX")
 
-	chip.Emulate(game)
+	vm := chip.Chip{}
+	vm.Emulate(game)
 }
