@@ -10,17 +10,17 @@ type Chip struct {
 	SystemRegister uint16
 	VRegisters     [16]byte
 	OpPointer      uint16
+	Rom            rom.Rom
 }
 
 func GetMemoryLocation(opcode []byte) uint16 {
 	return (uint16(opcode[0])&15)<<8 | uint16(opcode[1])
 }
-
-func (proc *Chip) Emulate(game rom.Rom) {
+func (vm *Chip) Emulate() {
 	//var systemRegister uint16 = 0
 	//fmt.Printf("\nNow running game\n\n%d\n\n", *game)
 	for i := 0; i < 10; i++ {
-		opcode, err := proc.NextOperation(game)
+		opcode, err := vm.NextOperation()
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -42,17 +42,30 @@ func (proc *Chip) Emulate(game rom.Rom) {
 				fmt.Println("Call RCA or something")
 			}
 		case 1:
-			proc.Jump(opcode)
+			vm.Jump(opcode)
 		case 2:
 			fmt.Printf("Call subroutine - no idea")
 		case 3:
-			fmt.Println("Skip next if eq")
+			fmt.Println("Skip next if eq", lastLeft, opcode[1])
+			if vm.VRegisters[lastLeft] == opcode[1] {
+				vm.Skip()
+			}
 		case 4:
-			fmt.Println("Skip if neq")
+			fmt.Println("Skip if neq", lastLeft, opcode[1])
+			if vm.VRegisters[lastLeft] == opcode[1] {
+				vm.Skip()
+			}
+		case 5:
+			firstRight := opcode[1] >> 4
+			fmt.Println("Skip if VX == VY", lastLeft, firstRight)
+			if vm.VRegisters[lastLeft] == vm.VRegisters[firstRight] {
+				vm.Skip()
+			}
+
 		case 0xA:
 			fmt.Printf("Set register to ")
-			proc.SetSysRegister(GetMemoryLocation(opcode))
-			fmt.Printf("%X\n", proc.OpPointer)
+			vm.SetSysRegister(GetMemoryLocation(opcode))
+			fmt.Printf("%X\n", vm.OpPointer)
 		default:
 			fmt.Println("Coming soon")
 		}
@@ -66,17 +79,21 @@ func (vm *Chip) SetSysRegister(value uint16) {
 func (machine *Chip) Jump(opcode []byte) {
 	// First 512 bytes (0x200 in hex) are chip-reserved memory
 	machine.OpPointer = GetMemoryLocation(opcode) - 0x200
-	fmt.Println("Jumping to mem-location ", machine.OpPointer)
+	fmt.Printf("Jumping to mem-location %X\n", machine.OpPointer)
 }
 
-func (vm *Chip) NextOperation(game rom.Rom) ([]byte, error) {
+func (vm *Chip) NextOperation() ([]byte, error) {
 	(*vm).OpPointer += 2
 
-	if int(vm.OpPointer) > len(game.Data)-3 {
+	if int(vm.OpPointer) > len((*vm).Rom.Data) {
 		return nil, errors.New("The ROM has ended, STAHP")
 	}
 
-	opcode := []byte{game.Data[vm.OpPointer-2], game.Data[vm.OpPointer-1]}
+	opcode := []byte{(*vm).Rom.Data[vm.OpPointer-2], (*vm).Rom.Data[vm.OpPointer-1]}
 
 	return opcode, nil
+}
+
+func (vm *Chip) Skip() {
+	vm.OpPointer += 2
 }
