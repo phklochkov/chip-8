@@ -7,9 +7,21 @@ import (
 )
 
 func TestEmulate(t *testing.T) {
+	// Should be 36 in total. In a perfect world
 	testCases := [][]byte{
 		[]byte{0x0A, 0xAA},
 		[]byte{0x12, 0x34},
+		[]byte{0x60, 0x42},
+		[]byte{0x70, 0x42},
+		[]byte{0x64, 0x42, 0x80, 0x40},
+		[]byte{0x64, 0x42, 0x80, 0x41},
+		[]byte{0x64, 0x42, 0x80, 0x42},
+		[]byte{0x64, 0x42, 0x80, 0x43},
+		[]byte{0x64, 0x42, 0x80, 0x44},
+		[]byte{0x64, 0x42, 0x80, 0x45},
+		[]byte{0x64, 0x42, 0x80, 0x46},
+		[]byte{0x64, 0x42, 0x80, 0x47},
+		[]byte{0x64, 0x42, 0x80, 0x4E},
 	}
 
 	for _, data := range testCases {
@@ -34,6 +46,33 @@ func TestEmulate(t *testing.T) {
 		case 3:
 			if vm.OpPointer != 4 {
 				t.Error("Eq-Skip is incorrect")
+			}
+		case 6:
+			if vm.VRegisters[0] != 0x42 {
+				t.Error("6 is incorrect, register should be 42")
+			}
+		case 7:
+			if vm.VRegisters[0] != 0x42 {
+				t.Error("7XNN Fail")
+			}
+		case 8:
+			firstRight := data[1] >> 4
+			lastRight := data[1] & 0xF
+			switch lastRight {
+			case 0:
+				if vm.VRegisters[lastLeft] != vm.VRegisters[firstRight] && vm.VRegisters[lastLeft] != 42 {
+					t.Error("8XY0 Fail")
+				}
+			case 1:
+				// Need to inject ROM state for this test
+			case 2:
+				vm.VRegisters[lastLeft] &= vm.VRegisters[firstRight]
+			case 3:
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+			case 0xE:
 			}
 		default:
 			t.Error("Unhandled test case")

@@ -22,7 +22,7 @@ func GetMemoryLocation(opcode []byte) uint16 {
 func (vm *Chip) Emulate() {
 	//var systemRegister uint16 = 0
 	//fmt.Printf("\nNow running game\n\n%d\n\n", *game)
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 55; i++ {
 		opcode, err := vm.NextOperation()
 		if err != nil {
 			fmt.Println(err)
@@ -52,24 +52,67 @@ func (vm *Chip) Emulate() {
 		case 2:
 			fmt.Printf("Call subroutine - no idea")
 		case 3:
-			fmt.Println("Skip next if eq", lastLeft, opcode[1])
 			if vm.VRegisters[lastLeft] == opcode[1] {
 				vm.Skip()
 			}
 		case 4:
-			fmt.Println("Skip if neq", lastLeft, opcode[1])
 			if vm.VRegisters[lastLeft] == opcode[1] {
 				vm.Skip()
 			}
 		case 5:
 			firstRight := opcode[1] >> 4
-			fmt.Println("Skip if VX == VY", lastLeft, firstRight)
 			if vm.VRegisters[lastLeft] == vm.VRegisters[firstRight] {
 				vm.Skip()
 			}
 		case 6:
-			fmt.Println("Set VX = ", lastLeft, opcode[1])
-
+			vm.VRegisters[lastLeft] = opcode[1]
+		case 7:
+			vm.VRegisters[lastLeft] += opcode[1]
+		case 8:
+			firstRight := opcode[1] >> 4
+			switch opcode[1] & 0xF {
+			case 0:
+				vm.VRegisters[lastLeft] = vm.VRegisters[firstRight]
+			case 1:
+				vm.VRegisters[lastLeft] |= vm.VRegisters[firstRight]
+			case 2:
+				vm.VRegisters[lastLeft] &= vm.VRegisters[firstRight]
+			case 3:
+				vm.VRegisters[lastLeft] ^= vm.VRegisters[firstRight]
+			case 4:
+				if firstRight > lastLeft {
+					vm.VRegisters[0xF] = 1
+				} else {
+					vm.VRegisters[0xF] = 0
+				}
+				vm.VRegisters[lastLeft] += vm.VRegisters[firstRight]
+			case 5:
+				if firstRight > lastLeft {
+					vm.VRegisters[0xF] = 0
+				} else {
+					vm.VRegisters[0xF] = 1
+				}
+				vm.VRegisters[lastLeft] -= vm.VRegisters[firstRight]
+			case 6:
+				vm.VRegisters[0xF] = vm.VRegisters[lastLeft] & 1
+				vm.VRegisters[lastLeft] >>= 1
+			case 7:
+				if firstRight < lastLeft {
+					vm.VRegisters[0xF] = 0
+				} else {
+					vm.VRegisters[0xF] = 1
+				}
+				vm.VRegisters[lastLeft] = vm.VRegisters[firstRight] - vm.VRegisters[lastLeft]
+			case 0xE:
+				vm.VRegisters[0xF] = vm.VRegisters[lastLeft] >> 7
+				// WTF, Why on 0x8? Bollocks...
+				vm.VRegisters[lastLeft] <<= 1
+			}
+		case 0x9:
+			firstRight := opcode[1] >> 4
+			if vm.VRegisters[lastLeft] != vm.VRegisters[firstRight] {
+				vm.Skip()
+			}
 		case 0xA:
 			fmt.Printf("Set register to ")
 			vm.SetSysRegister(GetMemoryLocation(opcode))
