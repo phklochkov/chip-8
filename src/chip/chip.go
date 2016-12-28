@@ -3,9 +3,11 @@ package chip
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"rom"
+	"time"
 )
 
 type Chip struct {
@@ -32,7 +34,7 @@ func (vm *Chip) Emulate() {
 		firstLeft := opcode[0] >> 4
 		lastLeft := opcode[0] & 15
 
-		fmt.Printf("%X %X\n", (firstLeft<<4 | lastLeft), opcode[1])
+		//fmt.Printf("%X %X\n", (firstLeft<<4 | lastLeft), opcode[1])
 
 		switch firstLeft {
 		case 0:
@@ -103,9 +105,9 @@ func (vm *Chip) Emulate() {
 					vm.VRegisters[0xF] = 1
 				}
 				vm.VRegisters[lastLeft] = vm.VRegisters[firstRight] - vm.VRegisters[lastLeft]
+			// WTF, Why on 0x8? Bollocks...
 			case 0xE:
 				vm.VRegisters[0xF] = vm.VRegisters[lastLeft] >> 7
-				// WTF, Why on 0x8? Bollocks...
 				vm.VRegisters[lastLeft] <<= 1
 			}
 		case 0x9:
@@ -114,9 +116,23 @@ func (vm *Chip) Emulate() {
 				vm.Skip()
 			}
 		case 0xA:
-			fmt.Printf("Set register to ")
 			vm.SetSysRegister(GetMemoryLocation(opcode))
-			fmt.Printf("%X\n", vm.OpPointer)
+		case 0xB:
+			vm.OpPointer = GetMemoryLocation(opcode) + uint16(vm.VRegisters[0]) - 0x200
+		case 0xC:
+			rand.Seed(time.Now().UTC().UnixNano())
+			vm.VRegisters[lastLeft] = byte(rand.Intn(0xFF)) & opcode[1]
+		case 0xD:
+			fmt.Println("Draw sprite")
+		case 0xE:
+			fmt.Println("Conditional skip")
+			if opcode[1] == 0x9E {
+				// Skip if VX is pressed
+				vm.Skip()
+			} else if opcode[1] == 0xA1 {
+				// Skip if VX is not pressed
+				vm.Skip()
+			}
 		default:
 			fmt.Println("Coming soon")
 		}
@@ -130,7 +146,6 @@ func (vm *Chip) SetSysRegister(value uint16) {
 func (machine *Chip) Jump(opcode []byte) {
 	// First 512 bytes (0x200 in hex) are chip-reserved memory
 	machine.OpPointer = GetMemoryLocation(opcode) - 0x200
-	fmt.Printf("Jumping to mem-location %X\n", machine.OpPointer)
 }
 
 func (vm *Chip) NextOperation() ([]byte, error) {

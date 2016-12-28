@@ -13,15 +13,16 @@ func TestEmulate(t *testing.T) {
 		[]byte{0x12, 0x34},
 		[]byte{0x60, 0x42},
 		[]byte{0x70, 0x42},
-		[]byte{0x64, 0x42, 0x80, 0x40},
-		[]byte{0x64, 0x42, 0x80, 0x41},
-		[]byte{0x64, 0x42, 0x80, 0x42},
-		[]byte{0x64, 0x42, 0x80, 0x43},
-		[]byte{0x64, 0x42, 0x80, 0x44},
-		[]byte{0x64, 0x42, 0x80, 0x45},
-		[]byte{0x64, 0x42, 0x80, 0x46},
-		[]byte{0x64, 0x42, 0x80, 0x47},
-		[]byte{0x64, 0x42, 0x80, 0x4E},
+		[]byte{0x64, 0x1, 0x80, 0x40},
+		[]byte{0x64, 0xF, 0x65, 0xF0, 0x84, 0x51},
+		[]byte{0x64, 0xF, 0x65, 0xFF, 0x84, 0x52},
+		[]byte{0x64, 0xF, 0x65, 0x0E, 0x84, 0x53},
+		//[]byte{0x64, 0x42, 0x80, 0x43},
+		//[]byte{0x64, 0x42, 0x80, 0x44},
+		//[]byte{0x64, 0x42, 0x80, 0x45},
+		//[]byte{0x64, 0x42, 0x80, 0x46},
+		//[]byte{0x64, 0x42, 0x80, 0x47},
+		//[]byte{0x64, 0x42, 0x80, 0x4E},
 	}
 
 	for _, data := range testCases {
@@ -30,8 +31,8 @@ func TestEmulate(t *testing.T) {
 
 		vm.Emulate()
 
-		firstLeft := data[0] >> 4
-		//lastLeft := data[0] & 15
+		firstLeft := data[len(data)-2] >> 4
+		lastLeft := data[len(data)-2] & 15
 
 		switch firstLeft {
 		case 0:
@@ -48,26 +49,33 @@ func TestEmulate(t *testing.T) {
 				t.Error("Eq-Skip is incorrect")
 			}
 		case 6:
-			if vm.VRegisters[0] != 0x42 {
-				t.Error("6 is incorrect, register should be 42")
+			if vm.VRegisters[lastLeft] != 0x42 {
+				t.Error("6 is incorrect, register should be 42", data)
 			}
 		case 7:
 			if vm.VRegisters[0] != 0x42 {
 				t.Error("7XNN Fail")
 			}
 		case 8:
-			firstRight := data[1] >> 4
-			lastRight := data[1] & 0xF
+			firstRight := data[len(data)-1] >> 4
+			lastRight := data[len(data)-1] & 0xF
 			switch lastRight {
 			case 0:
-				if vm.VRegisters[lastLeft] != vm.VRegisters[firstRight] && vm.VRegisters[lastLeft] != 42 {
+				if vm.VRegisters[lastLeft] != vm.VRegisters[firstRight] {
 					t.Error("8XY0 Fail")
 				}
 			case 1:
-				// Need to inject ROM state for this test
+				if vm.VRegisters[lastLeft] != 0xFF {
+					t.Error("8XY1 Fail")
+				}
 			case 2:
-				vm.VRegisters[lastLeft] &= vm.VRegisters[firstRight]
+				if vm.VRegisters[lastLeft] != 0xF {
+					t.Error("8XY2 Fail")
+				}
 			case 3:
+				if vm.VRegisters[lastLeft] != 1 {
+					t.Error("8XY3 Fail")
+				}
 			case 4:
 			case 5:
 			case 6:
